@@ -7,6 +7,11 @@ param(
     [switch]$Keep
 )
 
+# Вывод программы сравниваем в UTF-8: иначе Windows подставит свою
+# кодировку консоли, и русские строки не совпадут.
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+$OutputEncoding = [Text.Encoding]::UTF8
+
 $ErrorActionPreference = "Stop"
 
 if (-not (Test-Path $Cli)) { throw "Не нахожу $Cli - собери проект или укажи путь через -Cli" }

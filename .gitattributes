@@ -1,0 +1,9 @@
+# Файлы кода держим в LF: на Windows git иначе переведёт их в CRLF,
+# и проверка gofmt в сборке начнёт ругаться на все файлы сразу.
+* text=auto eol=lf
+
+*.png binary
+*.ttf binary
+*.ico binary
+*.exe binary
+*.zip binary
