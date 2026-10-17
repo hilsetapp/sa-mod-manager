@@ -1,0 +1,11 @@
+# собранные файлы
+sa-mods.exe
+sa-mods-cli.exe
+*.zip
+*.exe
+
+# мусор сборки и редакторов
+/dist/
+/tmp/
+.DS_Store
+Thumbs.db

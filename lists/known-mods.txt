@@ -1,0 +1,22 @@
+# Любимые моды сообщества, которые почти у каждого стоят.
+# Смысл списка: подсказать новичку, что поставить первым.
+silentpatch
+mixsets
+modloader
+essentials
+frameratevigilante
+wbuff
+cleo
+sannybuilder
+imvehft
+project2dfx
+skygfx
+ps2-features
+saat
+GFXHack
+openlimitadjuster
+limitadjuster
+hud
+lb
+map
+sound
