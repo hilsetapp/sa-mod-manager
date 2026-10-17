@@ -1,0 +1,65 @@
+name: Релиз
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - name: Достаём код
+        uses: actions/checkout@v4
+
+      - name: Ставим Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+
+      - name: Тесты
+        run: go test ./...
+
+      - name: Собираем программу
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}"
+          go build -ldflags "-H=windowsgui -s -w -X main.version=$v" -o sa-mods.exe ./cmd/sa-mods
+          go build -ldflags "-s -w -X main.version=$v" -o sa-mods-cli.exe ./cmd/sa-mods-cli
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item sa-mods.exe, sa-mods-cli.exe dist
+          Copy-Item README*.md, LICENSE, THIRD_PARTY_NOTICES.md, CHANGELOG.md dist
+          Get-ChildItem *.txt | Copy-Item -Destination dist
+          Copy-Item scripts/selftest.ps1 dist
+          New-Item -ItemType Directory -Force -Path dist/lists | Out-Null
+          Copy-Item lists/*.txt dist/lists
+          Compress-Archive -Path dist/* -DestinationPath sa-mod-manager-windows.zip -Force
+          $h = (Get-FileHash sa-mod-manager-windows.zip -Algorithm SHA256).Hash.ToLower()
+          "$h  sa-mod-manager-windows.zip" | Out-File -Encoding ascii sa-mod-manager-windows.zip.sha256
+          Get-Item sa-mod-manager-windows.zip | Select-Object Name, Length
+          Write-Host "sha256: $h"
+
+      - name: Публикуем релиз
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sa-mod-manager-windows.zip
+            sa-mod-manager-windows.zip.sha256
+          body: |
+            **Менеджер модов GTA San Andreas ${{ github.ref_name }}**
+
+            Включай и выключай моды одним переключателем, а конфликты видно до запуска игры.
+
+            В архиве:
+            - `sa-mods.exe` - окно менеджера
+            - `sa-mods-cli.exe` - командная строка
+            - `КАК-ЗАПУСТИТЬ.txt` - короткая инструкция
+            - `selftest.ps1` - самопроверка, если что-то не работает
+
+            Как запустить: распакуй в любую папку, запусти `sa-mods.exe`, выбери папку с `gta_sa.exe` и добавляй моды из zip.
+            Нужен установленный ModLoader (`modloader.asi`), иначе игра не увидит папку modloader - менеджер предупредит об этом сам.

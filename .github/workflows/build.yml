@@ -1,0 +1,48 @@
+name: Сборка
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      # Собственной C-сборки проекту не нужно: так сборка не зависит от того,
+      # какой компилятор оказался на раннере.
+      CGO_ENABLED: "0"
+    steps:
+      - name: Достаём код
+        uses: actions/checkout@v4
+
+      - name: Ставим Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+
+      - name: Проверяем формат
+        shell: pwsh
+        run: |
+          $bad = gofmt -l .
+          if ($bad) { Write-Host "Эти файлы не по формату:"; Write-Host $bad; throw "gofmt нашёл неровности" }
+          Write-Host "формат в порядке"
+
+      - name: Линтер
+        run: go vet ./...
+
+      - name: Тесты
+        run: go test ./...
+
+      - name: Собираем программу
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME } else { "dev" }
+          go build -ldflags "-H=windowsgui -s -w -X main.version=$v" -o sa-mods.exe ./cmd/sa-mods
+          go build -ldflags "-s -w -X main.version=$v" -o sa-mods-cli.exe ./cmd/sa-mods-cli
+          Get-Item sa-mods.exe, sa-mods-cli.exe | Select-Object Name, Length
+
+      - name: Самопроверка
+        shell: pwsh
+        run: ./scripts/selftest.ps1 -Cli ./sa-mods-cli.exe
